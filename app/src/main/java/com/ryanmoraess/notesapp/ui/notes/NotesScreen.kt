@@ -41,6 +41,7 @@ fun NotesScreen(viewModel: NotesViewModel = viewModel()) {
     val notes by viewModel.notes.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var noteBeingEdited by remember { mutableStateOf<Note?>(null) }
+    var noteToDelete by remember { mutableStateOf<Note?>(null) }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Notes") }) },
@@ -84,7 +85,8 @@ fun NotesScreen(viewModel: NotesViewModel = viewModel()) {
                             noteBeingEdited = note
                             showDialog = true
                         },
-                        onToggleDone = { viewModel.toggleDone(note) }
+                        onToggleDone = { viewModel.toggleDone(note) },
+                        onDelete = { noteToDelete = note }
                     )
                 }
             }
@@ -108,13 +110,37 @@ fun NotesScreen(viewModel: NotesViewModel = viewModel()) {
             }
         )
     }
+
+    noteToDelete?.let { target ->
+        AlertDialog(
+            onDismissRequest = { noteToDelete = null },
+            title = { Text("Excluir nota") },
+            text = { Text("Deseja excluir esta nota? Esta ação não pode ser desfeita.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteNote(target)
+                        noteToDelete = null
+                    }
+                ) {
+                    Text("Excluir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { noteToDelete = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 }
 
 @Composable
 private fun NoteItem(
     note: Note,
     onClick: () -> Unit,
-    onToggleDone: () -> Unit
+    onToggleDone: () -> Unit,
+    onDelete: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -138,6 +164,9 @@ private fun NoteItem(
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
+            }
+            TextButton(onClick = onDelete) {
+                Text("Excluir")
             }
         }
     }
